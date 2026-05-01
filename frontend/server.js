@@ -26,6 +26,7 @@ app.post('/post', async (req, res) => {
         await axios.post(`${backendUrl}/add`, { content: req.body.message });
         postCounter.inc(); // เพิ่มค่า Metric เมื่อมีคนโพสต์สำเร็จ
         res.send('Success!');
+        res.redirect('/');
     } catch (err) {
         res.status(500).send('Error');
     }
