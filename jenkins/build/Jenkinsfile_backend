@@ -1,23 +1,15 @@
 pipeline {
     agent { label "wsl" }
-    
-    environment {
-        // เปลี่ยนชื่อ username ให้เป็นของคุณ
-        DOCKER_USER = "tapootum"
-        REGISTRY = "docker.io"
-        FE_IMAGE = "${DOCKER_USER}/node-frontend"
-        BE_IMAGE = "${DOCKER_USER}/python-backend"
-    }
-
     stages {
         stage('Checkout') {
             steps {
+                cleanWs()
                 withCredentials([usernamePassword(credentialsId: 'github', 
                                  usernameVariable: 'USER', 
                                  passwordVariable: 'PASS')]) {
                     
                     // เรียกใช้ผ่านตัวแปร $USER และ $PASS
-                        sh "git clone https://$USER:$PASS@github.com/tapootum/project-03-2026.git"
+                        sh "git clone https://$USER:$PASS@github.com/tapootum/project-03-2026.git ."
                     }
                 // ดึง Code จาก Git
                 }
@@ -26,9 +18,9 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Build Frontend
-                    echo "Building Frontend Image..."
-                    sh "cd frontend && docker build . -t tapootum:test-frontend-${version}"
+                    // Build backend
+                    echo "Building backend Image..."
+                    sh "cd backend && docker build . -t tapootum/test-backend:${version}"
                 }
             }
         }
@@ -36,8 +28,8 @@ pipeline {
             steps {
                 script {
                     // ทดสอบรัน Container จาก Image ที่สร้างขึ้น
-                    echo "Testing Frontend Image..."
-                    sh "docker run --rm tapootum:test-frontend-${version} echo 'Frontend Test Passed!'"
+                    echo "Testing backend Image..."
+                    sh "docker run --rm tapootum/test-backend:${version} echo 'backend Test Passed!'"
                 }
             }
         }
@@ -46,15 +38,15 @@ pipeline {
             steps {
                 script {
                     // Login to Docker Hub
-                    withCredentials([usernamePassword(credentialsId: 'github', 
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', 
                                  usernameVariable: 'DUSER', 
                                  passwordVariable: 'DPASS')]) {
                     echo "Logging in to Docker Hub..."
                     sh "echo $DPASS | docker login -u $DUSER --password-stdin"
 
-                    // Push Frontend Image
-                    echo "Pushing Frontend Image to Docker Hub..."
-                    sh "docker push tapootum:test-frontend-${version}"
+                    // Push backend Image
+                    echo "Pushing backend Image to Docker Hub..."
+                    sh "docker push tapootum/test-backend:${version}"
                     
                 }
                 }
@@ -64,7 +56,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh "echo 'Cleaning up local Docker images...'"
-                sh "docker rmi tapootum:test-frontend-${version}"
+                sh "docker rmi tapootum/test-backend:${version}"
                 sh "docker logout"
                 // ลบ Image ในเครื่อง Jenkins เพื่อประหยัดพื้นที่
             }

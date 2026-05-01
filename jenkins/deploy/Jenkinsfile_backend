@@ -1,0 +1,37 @@
+pipeline {
+    agent { label "wsl" }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                withCredentials([usernamePassword(credentialsId: 'github', 
+                                 usernameVariable: 'USER', 
+                                 passwordVariable: 'PASS')]) {
+                    
+                    // เรียกใช้ผ่านตัวแปร $USER และ $PASS
+                        sh "git clone https://$USER:$PASS@github.com/tapootum/project-03-2026.git ."
+                    }
+                // ดึง Code จาก Git
+                }
+            }
+
+        stage('Deploy to Kubernetes Cluster') {
+            steps {
+                script {
+                    // Build Backend
+                    echo "Deploy Backend to Kubernetes Cluster..."
+                    sh "cd ansible/backend && ansible-playbook -i hosts.ini deploy_backend.yml --extra-vars \"version=${version}\""
+                }
+            }
+        }
+
+
+        stage('Cleanup') {
+            steps {
+                cleanWs()
+                // ลบ Image ในเครื่อง Jenkins เพื่อประหยัดพื้นที่
+            }
+        }
+    }
+}
