@@ -15,30 +15,63 @@ const postCounter = new client.Counter({
   help: 'Total number of posts submitted via frontend',
 });
 register.registerMetric(postCounter);
-
 app.get('/', (req, res) => {
-    // const status = req.query.status;
-    // let message = '';
+    // ดึงค่า status จาก URL (ถ้ามี)
+    const status = req.query.status;
+    let alertMessage = '';
 
-    // if (status === 'success') {
-    //     message = '<p style="color: green;">✅ Post successfully!</p>';
-    // } else if (status === 'error') {
-    //     message = '<p style="color: red;">❌ Something went wrong.</p>';
-    // }
-    res.send(`<form method="POST" action="/post"><input type="text" name="message"><button type="submit">Send</button></form>`);
+    if (status === 'success') {
+        alertMessage = '<p style="color: green;">✅ Post successfully!</p>';
+    }
+
+    res.send(`
+        ${alertMessage}
+        <form method="POST" action="/post">
+            <input type="text" name="message" required>
+            <button type="submit">Send</button>
+        </form>
+    `);
 });
 
 app.post('/post', async (req, res) => {
     try {
         const backendUrl = process.env.BACKEND_URL || 'http://192.168.199.233:30500';
         await axios.post(`${backendUrl}/add`, { content: req.body.message });
-        postCounter.inc(); // เพิ่มค่า Metric เมื่อมีคนโพสต์สำเร็จ
-        res.send('Success!');
-        res.redirect('/');
+        
+        postCounter.inc(); 
+
+        // ลบ res.send('Success!') ออก แล้วใช้ redirect อย่างเดียว
+        res.redirect('/?status=success');
+        
     } catch (err) {
+        console.error(err);
         res.status(500).send('Error');
     }
 });
+
+// app.get('/', (req, res) => {
+//     // const status = req.query.status;
+//     // let message = '';
+
+//     // if (status === 'success') {
+//     //     message = '<p style="color: green;">✅ Post successfully!</p>';
+//     // } else if (status === 'error') {
+//     //     message = '<p style="color: red;">❌ Something went wrong.</p>';
+//     // }
+//     res.send(`<form method="POST" action="/post"><input type="text" name="message"><button type="submit">Send</button></form>`);
+// });
+
+// app.post('/post', async (req, res) => {
+//     try {
+//         const backendUrl = process.env.BACKEND_URL || 'http://192.168.199.233:30500';
+//         await axios.post(`${backendUrl}/add`, { content: req.body.message });
+//         postCounter.inc(); // เพิ่มค่า Metric เมื่อมีคนโพสต์สำเร็จ
+//         res.send('Success!');
+//         res.redirect('/');
+//     } catch (err) {
+//         res.status(500).send('Error');
+//     }
+// });
 
 // Endpoint สำหรับ Prometheus มา Scrape
 app.get('/metrics', async (req, res) => {
