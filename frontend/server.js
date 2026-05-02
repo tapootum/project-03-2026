@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
     let alertMessage = '';
 
     if (status === 'success') {
-        alertMessage = '<p style="color: green;">✅ Post successfully!</p>';
+        alertMessage = '<p style="color: green;">✅ Post successfully! v 1.0.0</p>';
     }
 
     res.send(`
